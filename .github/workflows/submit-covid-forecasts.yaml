@@ -42,6 +42,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          # Pull latest changes
+          git pull origin main --rebase
+
           # Add and commit the new forecasts
           git add covid/submissions/
 
@@ -50,7 +53,8 @@ jobs:
             echo "No new forecasts to commit"
           else
             git commit -m "Store covid forecasts $(date +%Y-%m-%d)"
-            git push
+            # Try to push, if it fails due to conflicts, pull and push again
+            git push || (git pull --rebase origin main && git push)
           fi
 
       - name: Fork and sync target repository
@@ -59,10 +63,10 @@ jobs:
           gh auth login --with-token <<< "${{ secrets.PRIVATE_ACCESS_TOKEN }}"
 
           # Fork the repository (if not already forked)
-          gh repo fork CDCgov/covid19-forecast-hub --clone=true || true
+          FORK_DIR=$(gh repo fork CDCgov/covid19-forecast-hub --clone=true | grep -o 'Cloning into '"'"'\K[^'"'"']*')
 
-          # Sync the fork with upstream
-          pushd covid19-forecast-hub
+          # Navigate to the forked repository directory
+          pushd "$FORK_DIR"
 
           # Add upstream remote if it doesn't exist
           git remote add upstream https://github.com/CDCgov/covid19-forecast-hub.git 2>/dev/null || true
@@ -80,15 +84,20 @@ jobs:
 
       - name: Copy forecast files
         run: |
+          # Get the fork directory name
+          FORK_DIR=$(find . -maxdepth 1 -type d -name "covid19-forecast-hub*" -print -quit)
+
           # Create target directory if it doesn't exist
-          mkdir -p covid19-forecast-hub/model-output/Metaculus-cp
+          mkdir -p "$FORK_DIR/model-output/Metaculus-cp"
 
           # Copy new forecasts
-          cp -r covid/submissions/* covid19-forecast-hub/model-output/Metaculus-cp/
+          cp -r covid/submissions/* "$FORK_DIR/model-output/Metaculus-cp/"
 
       - name: Create Pull Request
         run: |
-          cd covid19-forecast-hub
+          # Get the fork directory name
+          FORK_DIR=$(find . -maxdepth 1 -type d -name "covid19-forecast-hub*" -print -quit)
+          cd "$FORK_DIR"
 
           # Setup git config
           git config user.name "github-actions[bot]"

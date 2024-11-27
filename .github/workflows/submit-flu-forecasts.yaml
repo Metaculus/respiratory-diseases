@@ -42,6 +42,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          # Pull latest changes
+          git pull origin main --rebase
+
           # Add and commit the new forecasts
           git add flu/submissions/
 
@@ -50,7 +53,8 @@ jobs:
             echo "No new forecasts to commit"
           else
             git commit -m "Store flu forecasts $(date +%Y-%m-%d)"
-            git push
+            # Try to push, if it fails due to conflicts, pull and push again
+            git push || (git pull --rebase origin main && git push)
           fi
 
       - name: Fork and sync target repository
