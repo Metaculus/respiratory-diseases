@@ -73,8 +73,8 @@ jobs:
           # Create PR
           gh pr create \
             --title "Update flu forecasts $(date +%Y-%m-%d)" \
-            --body "Automated flu forecast submission from MetaC" \
-            --repo HopkinsIDD/rsv-forecast-hub \
+            --body "Automated flu forecast submission from Metaculus" \
+            --repo cdcepi/FluSight-forecast-hub \
             --base main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
