@@ -36,6 +36,23 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}
 
+      - name: Commit forecasts to repository
+        run: |
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Add and commit the new forecasts
+          git add flu/submissions/
+
+          # Only commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No new forecasts to commit"
+          else
+            git commit -m "Store flu forecasts $(date +%Y-%m-%d)"
+            git push
+          fi
+
       - name: Fork and sync target repository
         run: |
           # Install GitHub CLI
