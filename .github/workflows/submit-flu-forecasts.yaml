@@ -67,6 +67,9 @@ jobs:
           # Add upstream remote if it doesn't exist
           git remote add upstream https://github.com/cdcepi/FluSight-forecast-hub.git 2>/dev/null || true
 
+          # Set the origin remote with authentication token
+          git remote set-url origin "https://${{ secrets.PRIVATE_ACCESS_TOKEN }}@github.com/${{ github.actor }}/FluSight-forecast-hub.git"
+
           # Fetch and sync with upstream
           git fetch upstream
           git checkout main
