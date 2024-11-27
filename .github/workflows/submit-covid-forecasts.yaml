@@ -62,8 +62,15 @@ jobs:
           # Install GitHub CLI
           gh auth login --with-token <<< "${{ secrets.PRIVATE_ACCESS_TOKEN }}"
 
-          # Fork the repository (if not already forked)
-          FORK_DIR=$(gh repo fork CDCgov/covid19-forecast-hub --clone=true --remote=true | grep -o 'Cloning into '"'"'\K[^'"'"']*')
+          # Check if fork exists and is accessible
+          if ! gh repo view ${{ github.actor }}/covid19-forecast-hub >/dev/null 2>&1; then
+            # Fork doesn't exist or is inaccessible, create it
+            FORK_DIR=$(gh repo fork CDCgov/covid19-forecast-hub --clone=true --remote=true | grep -o 'Cloning into '"'"'\K[^'"'"']*')
+          else
+            # Fork exists, clone it directly
+            git clone "https://${{ secrets.PRIVATE_ACCESS_TOKEN }}@github.com/${{ github.actor }}/covid19-forecast-hub.git"
+            FORK_DIR="covid19-forecast-hub"
+          fi
 
           # Navigate to the forked repository directory
           pushd "$FORK_DIR"
