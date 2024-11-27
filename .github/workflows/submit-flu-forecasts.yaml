@@ -39,7 +39,7 @@ jobs:
       - name: Fork and clone target repository
         run: |
           # Install GitHub CLI
-          gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
+          gh auth login --with-token <<< "${{ secrets.PRIVATE_ACCESS_TOKEN }}"
 
           # Fork the repository (if not already forked)
           gh repo fork cdcepi/FluSight-forecast-hub --clone=true
@@ -81,4 +81,4 @@ jobs:
             --repo cdcepi/FluSight-forecast-hub \
             --base main
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRIVATE_ACCESS_TOKEN: ${{ secrets.PRIVATE_ACCESS_TOKEN }}
