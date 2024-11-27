@@ -73,6 +73,4 @@ for subquestion in subquestions:
     forecasts.append(latest_forecast_df)
 
 forecasts_df = pd.concat(forecasts)
-forecasts_df.to_csv(
-    f"2024-25/flu/metac-cp/{reference_date}-metaculus-cp.csv", index=False
-)
+forecasts_df.to_csv(f"flu/submissions/{reference_date}-Metaculus-cp.csv", index=False)
