@@ -1,9 +1,6 @@
-# https://www.metaculus.com/questions/30048/us-rsv-hospitalization-forecasts-2024-25/
-# submissions:
-# - output file: YYYY-MM-DD-team-model.parquet
-# - team = abbreviated team name (metac)
-# horizons = 1, 2, 3, 4
-# - time: weekly forecasts by 11:59 PM Eastern Time each Tuesday.
+# https://www.metaculus.com/questions/29507/us-weekly-influenza-hospitalizations-24-25/
+
+# The Challenge Period will begin November 20, 2024, and will run until May 31, 2025. Participants are asked to submit weekly nowcasts and forecasts by 11PM Eastern Time each Wednesday (herein referred to as the Forecast Due Date).
 
 import requests
 from datetime import datetime, timedelta
@@ -11,27 +8,30 @@ import pandas as pd
 from utils import internal_to_actual
 import numpy as np
 
-question_id = 30048
+question_id = 29507
 url = f"https://metaculus.com/api/posts/{question_id}"
 response = requests.get(url).json()
 
-# origin date is the first date of the week for that week's forecast (i.e. the Sunday before the submission due date).
+# get reference date, which is the saturday following the submission due date
 today = datetime.now().date()  # this is the submission due date, a Tuesday
-days_until_sunday = (6 - today.weekday()) % 7  # 6 is Sunday
-origin_date = today + timedelta(days=days_until_sunday) - timedelta(days=7)
+days_until_saturday = (5 - today.weekday()) % 7  # 5 is Saturday
+reference_date = today + timedelta(days=days_until_saturday)
 
 forecasts = []
 
 subquestions = response["group_of_questions"]["questions"]
 for subquestion in subquestions:
+    # obtain the target end date
     question_title = subquestion["title"]
     target_end_date = question_title.split("(")[1].split(")")[0].strip()
     target_end_date = datetime.strptime(target_end_date, "%B %d, %Y").date()
 
-    # origin_date is always a Sunday, target_end_date is always a Saturday
-    horizon = ((target_end_date - origin_date).days + 1) // 7
+    # calculate horizon based on target_end_date and reference_date
+    # target_end_date should be equal to the reference_date + horizon*(7 days).
+    horizon = (target_end_date - reference_date).days // 7
 
-    if horizon not in [0, 1, 2, 3, 4, 5]:
+    # # only deal with forecast, if horizon is -1, 0, 1, 2, 3
+    if horizon not in [-1, 0, 1, 2, 3]:
         continue
 
     # obtain the scaling of the x-axis
@@ -57,10 +57,15 @@ for subquestion in subquestions:
     ).round(3)
     desired_quantiles = np.interp(desired_quantile_levels, cdf, actual_x_grid)
 
+    # need a dataframe with the quantiles and the quantile levels
     latest_forecast_df = pd.DataFrame(
         {
+            "reference_date": reference_date,
+            "target": "wk inc flu hosp",
             "horizon": horizon,
             "target_end_date": target_end_date,
+            "location": "US",
+            "output_type": "quantile",
             "output_type_id": desired_quantile_levels,
             "value": desired_quantiles,
         }
@@ -68,52 +73,6 @@ for subquestion in subquestions:
     forecasts.append(latest_forecast_df)
 
 forecasts_df = pd.concat(forecasts)
-
-full_horizons = list(range(1, 5))  # NNEDS TO BE 1
-full_target_end_dates = [origin_date + timedelta(days=7 * h - 1) for h in full_horizons]
-
-full_forecast_df = pd.DataFrame(
-    {
-        "horizon": full_horizons,
-        "target_end_date": full_target_end_dates,
-        "origin_date": origin_date,
-        "target": "inc hosp",
-        "location": "US",
-        "output_type": "quantile",
-        "age_group": "0-130",
-    }
-)
-full_forecast_df = full_forecast_df.merge(
-    pd.DataFrame({"output_type_id": desired_quantile_levels}), how="cross"
-)
-
-forecasts_df_full = full_forecast_df.merge(
-    forecasts_df, on=["horizon", "target_end_date", "output_type_id"], how="left"
-)
-
-# sort according to quantile levels, then horizons
-forecasts_df_full = forecasts_df_full.sort_values(by=["output_type_id", "horizon"])
-
-forecasts_df_full["value"] = forecasts_df_full.groupby("output_type_id")["value"].transform(
-    lambda x: x.interpolate(method="linear", fill_value="extrapolate")
-)
-
-forecasts_df_full = forecasts_df_full.sort_values(by=["horizon", "output_type_id"])
-
-forecasts_df_full = forecasts_df_full[
-    [
-        "origin_date",
-        "horizon",
-        "target",
-        "target_end_date",
-        "location",
-        "output_type",
-        "output_type_id",
-        "value",
-        "age_group",
-    ]
-]
-
-forecasts_df_full.to_csv(
-    f"flu/submissions/{origin_date}-Metaculus-cp.csv", index=False
+forecasts_df.to_csv(
+    f"2024-25/flu/metac-cp/{reference_date}-metaculus-cp.csv", index=False
 )
