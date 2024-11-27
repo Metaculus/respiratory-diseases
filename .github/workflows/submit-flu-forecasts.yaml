@@ -74,6 +74,9 @@ jobs:
           else
             git commit -m "Update flu forecasts $(date +%Y-%m-%d)"
 
+            # Set the remote URL with authentication token
+            git remote set-url origin "https://${{ secrets.PRIVATE_ACCESS_TOKEN }}@github.com/${{ github.actor }}/FluSight-forecast-hub.git"
+
             # Push to fork
             git push origin $BRANCH_NAME
 
