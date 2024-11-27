@@ -115,5 +115,5 @@ forecasts_df_full = forecasts_df_full[
 ]
 
 forecasts_df_full.to_csv(
-    f"flu/submissions/{origin_date}-metac-cp.csv", index=False
+    f"flu/submissions/{origin_date}-Metaculus-cp.csv", index=False
 )

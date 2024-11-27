@@ -47,10 +47,10 @@ jobs:
       - name: Copy forecast files
         run: |
           # Create target directory if it doesn't exist
-          mkdir -p FluSight-forecast-hub/model-output/metac-cp
+          mkdir -p FluSight-forecast-hub/model-output/Metaculus-cp
 
           # Copy new forecasts
-          cp -r flu/submissions/* FluSight-forecast-hub/model-output/metac-cp/
+          cp -r flu/submissions/* FluSight-forecast-hub/model-output/Metaculus-cp/
 
       - name: Create Pull Request
         run: |
@@ -65,7 +65,7 @@ jobs:
           git checkout -b $BRANCH_NAME
 
           # Add and commit changes
-          git add model-output/metac-cp/
+          git add model-output/Metaculus-cp/
 
           # Only commit if there are changes
           if git diff --staged --quiet; then
@@ -85,7 +85,8 @@ jobs:
               --title "Update flu forecasts $(date +%Y-%m-%d)" \
               --body "Automated flu forecast submission from Metaculus" \
               --repo cdcepi/FluSight-forecast-hub \
-              --base main
+              --base main \
+              --head "${{ github.actor }}:$BRANCH_NAME"
           fi
         env:
           PRIVATE_ACCESS_TOKEN: ${{ secrets.PRIVATE_ACCESS_TOKEN }}
