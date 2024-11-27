@@ -94,8 +94,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Create a new branch
-          BRANCH_NAME="flu-forecast-update-$(date +%Y%m%d)"
+          # Create a new branch with timestamp to ensure uniqueness
+          BRANCH_NAME="flu-forecast-update-$(date +%Y%m%d-%H%M%S)"
           git checkout -b $BRANCH_NAME
 
           # Add and commit changes
@@ -111,8 +111,8 @@ jobs:
             # Set the remote URL with authentication token
             git remote set-url origin "https://${{ secrets.PRIVATE_ACCESS_TOKEN }}@github.com/${{ github.actor }}/FluSight-forecast-hub.git"
 
-            # Push to fork
-            git push origin $BRANCH_NAME
+            # Force push to fork with the new unique branch
+            git push -f origin $BRANCH_NAME
 
             # Create PR
             gh pr create \
