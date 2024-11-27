@@ -63,7 +63,7 @@ jobs:
           gh auth login --with-token <<< "${{ secrets.PRIVATE_ACCESS_TOKEN }}"
 
           # Fork the repository (if not already forked)
-          FORK_DIR=$(gh repo fork CDCgov/covid19-forecast-hub --clone=true | grep -o 'Cloning into '"'"'\K[^'"'"']*')
+          FORK_DIR=$(gh repo fork CDCgov/covid19-forecast-hub --clone=true --remote=true | grep -o 'Cloning into '"'"'\K[^'"'"']*')
 
           # Navigate to the forked repository directory
           pushd "$FORK_DIR"
