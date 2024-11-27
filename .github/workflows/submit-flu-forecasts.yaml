@@ -36,13 +36,27 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}
 
-      - name: Fork and clone target repository
+      - name: Fork and sync target repository
         run: |
           # Install GitHub CLI
           gh auth login --with-token <<< "${{ secrets.PRIVATE_ACCESS_TOKEN }}"
 
           # Fork the repository (if not already forked)
-          gh repo fork cdcepi/FluSight-forecast-hub --clone=true
+          gh repo fork cdcepi/FluSight-forecast-hub --clone=true || true
+
+          # Sync the fork with upstream
+          pushd FluSight-forecast-hub
+
+          # Add upstream remote if it doesn't exist
+          git remote add upstream https://github.com/cdcepi/FluSight-forecast-hub.git 2>/dev/null || true
+
+          # Fetch and sync with upstream
+          git fetch upstream
+          git checkout main
+          git reset --hard upstream/main
+          git push origin main --force
+
+          popd
 
       - name: Copy forecast files
         run: |
