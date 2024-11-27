@@ -8,7 +8,7 @@
 import requests
 from datetime import datetime, timedelta
 import pandas as pd
-from ..utils import internal_to_actual
+from utils import internal_to_actual
 import numpy as np
 
 question_id = 30048
@@ -115,5 +115,5 @@ forecasts_df_full = forecasts_df_full[
 ]
 
 forecasts_df_full.to_csv(
-    f"submissions/{origin_date}-metac-cp.csv", index=False
+    f"flu/submissions/{origin_date}-metac-cp.csv", index=False
 )

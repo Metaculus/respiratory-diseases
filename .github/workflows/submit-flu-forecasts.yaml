@@ -27,10 +27,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests pandas numpy
 
+      - name: Create required directories
+        run: |
+          mkdir -p flu/submissions
+
       - name: Run flu forecasting script
         run: python flu/run-flu-forecasts.py
         env:
-          PYTHONPATH: ${{ github.workspace }}/2024-25
+          PYTHONPATH: ${{ github.workspace }}
 
       - name: Fork and clone target repository
         run: |
@@ -49,7 +53,7 @@ jobs:
           mkdir -p model-output/metac-cp
 
           # Copy new forecasts
-          cp -r ../submissions/* model-output/metac-cp/
+          cp -r flu/submissions/* model-output/metac-cp/
 
       - name: Create Pull Request
         run: |
