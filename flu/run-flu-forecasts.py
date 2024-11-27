@@ -8,7 +8,7 @@
 import requests
 from datetime import datetime, timedelta
 import pandas as pd
-from utils import internal_to_actual
+from ..utils import internal_to_actual
 import numpy as np
 
 question_id = 30048
