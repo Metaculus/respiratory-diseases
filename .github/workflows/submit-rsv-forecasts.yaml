@@ -63,7 +63,7 @@ jobs:
           gh auth login --with-token <<< "${{ secrets.PRIVATE_ACCESS_TOKEN }}"
 
           # Fork the repository (if not already forked)
-          gh repo fork cdcepi/FluSight-forecast-hub --clone=true || true
+          gh repo fork HopkinsIDD/rsv-forecast-hub --clone=true || true
 
           # Sync the fork with upstream
           pushd FluSight-forecast-hub
@@ -72,7 +72,7 @@ jobs:
           git remote add upstream https://github.com/HopkinsIDD/rsv-forecast-hub.git 2>/dev/null || true
 
           # Set the origin remote with authentication token
-          git remote set-url origin "https://${{ secrets.PRIVATE_ACCESS_TOKEN }}@github.com/${{ github.actor }}/rsv-forecast-hub.git"
+          git remote set-url origin "https://x-access-token:${{ secrets.PRIVATE_ACCESS_TOKEN }}@github.com/${{ github.actor }}/rsv-forecast-hub.git"
 
           # Fetch and sync with upstream
           git fetch upstream
@@ -113,12 +113,12 @@ jobs:
             git commit -m "Update rsv forecasts $(date +%Y-%m-%d)"
 
             # Set the remote URL with authentication token
-            git remote set-url origin "https://${{ secrets.PRIVATE_ACCESS_TOKEN }}@github.com/${{ github.actor }}/rsv-forecast-hub.git"
+            git remote set-url origin "https://x-access-token:${{ secrets.PRIVATE_ACCESS_TOKEN }}@github.com/${{ github.actor }}/rsv-forecast-hub.git"
 
             # Force push to fork with the new unique branch
             git push -f origin $BRANCH_NAME
 
-            # Create PR
+            # Create PR using gh cli
             gh pr create \
               --title "Submission Metaculus forecasts $(date +%Y-%m-%d)" \
               --body "Automated rsv forecast submission from Metaculus" \
@@ -127,4 +127,5 @@ jobs:
               --head "${{ github.actor }}:$BRANCH_NAME"
           fi
         env:
-          PRIVATE_ACCESS_TOKEN: ${{ secrets.PRIVATE_ACCESS_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PRIVATE_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ secrets.PRIVATE_ACCESS_TOKEN }}
