@@ -114,4 +114,9 @@ forecasts_df_full = forecasts_df_full[
     ]
 ]
 
+forecasts_df_full.to_csv(
+    f"rsv/submissions-diagnostics/{origin_date}-Metaculus-cp.csv", index=False
+)
+
+forecasts_df_full = forecasts_df_full.drop(columns=["target_end_date"])
 forecasts_df_full.to_csv(f"rsv/submissions/{origin_date}-Metaculus-cp.csv", index=False)
