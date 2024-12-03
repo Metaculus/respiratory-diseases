@@ -1,0 +1,130 @@
+name: Make RSV Forecast Submission
+
+on:
+  schedule:
+    # Every Tuesday at 6pm CET (17:00 UTC)
+    - cron: '0 17 * * 2'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  submit-forecast:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pandas numpy
+
+      - name: Create required directories
+        run: |
+          mkdir -p rsv/submissions
+
+      - name: Run rsv forecasting script
+        run: python rsv/run-rsv-forecasts.py
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Commit forecasts to repository
+        run: |
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Pull latest changes
+          git pull origin main --rebase
+
+          # Add and commit the new forecasts
+          git add rsv/submissions/
+
+          # Only commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No new forecasts to commit"
+          else
+            git commit -m "Store rsv forecasts $(date +%Y-%m-%d)"
+            # Try to push, if it fails due to conflicts, pull and push again
+            git push || (git pull --rebase origin main && git push)
+          fi
+
+      - name: Fork and sync target repository
+        run: |
+          # Install GitHub CLI
+          gh auth login --with-token <<< "${{ secrets.PRIVATE_ACCESS_TOKEN }}"
+
+          # Fork the repository (if not already forked)
+          gh repo fork cdcepi/FluSight-forecast-hub --clone=true || true
+
+          # Sync the fork with upstream
+          pushd FluSight-forecast-hub
+
+          # Add upstream remote if it doesn't exist
+          git remote add upstream https://github.com/HopkinsIDD/rsv-forecast-hub.git 2>/dev/null || true
+
+          # Set the origin remote with authentication token
+          git remote set-url origin "https://${{ secrets.PRIVATE_ACCESS_TOKEN }}@github.com/${{ github.actor }}/rsv-forecast-hub.git"
+
+          # Fetch and sync with upstream
+          git fetch upstream
+          git checkout main
+          git reset --hard upstream/main
+          git push origin main --force
+
+          popd
+
+      - name: Copy forecast files
+        run: |
+          # Create target directory if it doesn't exist
+          mkdir -p rsv-forecast-hub/model-output/Metaculus-cp
+
+          # Copy new forecasts
+          cp -r rsv/submissions/* rsv-forecast-hub/model-output/Metaculus-cp/
+
+      - name: Create Pull Request
+        run: |
+          cd rsv-forecast-hub
+
+          # Setup git config
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Create a new branch with timestamp to ensure uniqueness
+          BRANCH_NAME="rsv-forecast-update-$(date +%Y%m%d-%H%M%S)"
+          git checkout -b $BRANCH_NAME
+
+          # Add and commit changes
+          git add model-output/Metaculus-cp/
+
+          # Only commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          else
+            git commit -m "Update rsv forecasts $(date +%Y-%m-%d)"
+
+            # Set the remote URL with authentication token
+            git remote set-url origin "https://${{ secrets.PRIVATE_ACCESS_TOKEN }}@github.com/${{ github.actor }}/rsv-forecast-hub.git"
+
+            # Force push to fork with the new unique branch
+            git push -f origin $BRANCH_NAME
+
+            # Create PR
+            gh pr create \
+              --title "Submission Metaculus forecasts $(date +%Y-%m-%d)" \
+              --body "Automated rsv forecast submission from Metaculus" \
+              --repo HopkinsIDD/rsv-forecast-hub \
+              --base main \
+              --head "${{ github.actor }}:$BRANCH_NAME"
+          fi
+        env:
+          PRIVATE_ACCESS_TOKEN: ${{ secrets.PRIVATE_ACCESS_TOKEN }}
