@@ -20,9 +20,7 @@ url = f"https://metaculus.com/api/posts/{question_id}"
 response = requests.get(url).json()
 
 # origin date is the first date of the week for that week's forecast (i.e. the Sunday before the submission due date).
-today = datetime.now().date() - timedelta(
-    days=1
-)  # this is the submission due date, a Tuesday
+today = datetime.now().date()
 days_until_sunday = (6 - today.weekday()) % 7  # 6 is Sunday
 origin_date = today + timedelta(days=days_until_sunday) - timedelta(days=7)
 
@@ -129,3 +127,4 @@ forecasts_df_full.to_csv(
 
 forecasts_df_full = forecasts_df_full.drop(columns=["target_end_date"])
 forecasts_df_full.to_csv(f"rsv/submissions/{origin_date}-Metaculus-cp.csv", index=False)
+

@@ -30,6 +30,7 @@ jobs:
       - name: Create required directories
         run: |
           mkdir -p rsv/submissions
+          mkdir -p rsv/submissions-diagnostics
 
       - name: Run rsv forecasting script
         run: python rsv/run-rsv-forecasts.py
@@ -42,11 +43,20 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          # Add all generated files before pulling
+          git add rsv/submissions/ rsv/submissions-diagnostics/
+
+          # Stash any changes if they exist
+          git stash || true
+
           # Pull latest changes
           git pull origin main --rebase
 
-          # Add and commit the new forecasts
-          git add rsv/submissions/
+          # Pop stashed changes if they exist
+          git stash pop || true
+
+          # Add all generated files again
+          git add rsv/submissions/ rsv/submissions-diagnostics/
 
           # Only commit if there are changes
           if git diff --staged --quiet; then
