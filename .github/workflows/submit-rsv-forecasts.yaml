@@ -42,14 +42,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Stash changes before pulling
-          git stash
-
           # Pull latest changes
           git pull origin main --rebase
-
-          # Apply stashed changes
-          git stash pop
 
           # Add and commit the new forecasts
           git add rsv/submissions/
