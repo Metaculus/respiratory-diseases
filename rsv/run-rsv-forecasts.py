@@ -8,15 +8,21 @@
 import requests
 from datetime import datetime, timedelta
 import pandas as pd
+import sys
+
+sys.path.append("..")
 from utils import internal_to_actual
 import numpy as np
+
 
 question_id = 30048
 url = f"https://metaculus.com/api/posts/{question_id}"
 response = requests.get(url).json()
 
 # origin date is the first date of the week for that week's forecast (i.e. the Sunday before the submission due date).
-today = datetime.now().date()  # this is the submission due date, a Tuesday
+today = datetime.now().date() - timedelta(
+    days=1
+)  # this is the submission due date, a Tuesday
 days_until_sunday = (6 - today.weekday()) % 7  # 6 is Sunday
 origin_date = today + timedelta(days=days_until_sunday) - timedelta(days=7)
 
@@ -31,7 +37,7 @@ for subquestion in subquestions:
     # origin_date is always a Sunday, target_end_date is always a Saturday
     horizon = ((target_end_date - origin_date).days + 1) // 7
 
-    if horizon not in [0, 1, 2, 3, 4, 5]:
+    if horizon not in [-1, 0, 1, 2, 3, 4, 5]:
         continue
 
     # obtain the scaling of the x-axis
@@ -69,7 +75,7 @@ for subquestion in subquestions:
 
 forecasts_df = pd.concat(forecasts)
 
-full_horizons = list(range(1, 5))  # NNEDS TO BE 1
+full_horizons = list(range(0, 5))  # NEEDS TO BE 1
 full_target_end_dates = [origin_date + timedelta(days=7 * h - 1) for h in full_horizons]
 
 full_forecast_df = pd.DataFrame(
@@ -113,6 +119,9 @@ forecasts_df_full = forecasts_df_full[
         "age_group",
     ]
 ]
+
+# filter horizons to 1, 2, 3, 4
+forecasts_df_full = forecasts_df_full[forecasts_df_full["horizon"].isin([1, 2, 3, 4])]
 
 forecasts_df_full.to_csv(
     f"rsv/submissions-diagnostics/{origin_date}-Metaculus-cp.csv", index=False
